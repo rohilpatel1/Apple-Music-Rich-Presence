@@ -20,6 +20,12 @@ function createWindow () {
   win.loadFile('index.html');
 }
 
+function setTime(sec) {
+  var t = new Date();
+  t.setSeconds(t.getSeconds() - sec);
+  return t.getTime()
+}
+
 app.whenReady().then(createWindow);
 
 let data = {
@@ -35,11 +41,10 @@ function update() {
 
   applescript.execString(linesArr[0], (err, res) => {
 
-    if (!res) return console.log('Music is not open');
+    if (!res) return;
 
     applescript.execString(linesArr[1], (err, song) => {
       data.song = song;
-      console.log(song);
     });
 
     applescript.execString(linesArr[2], (err, album) => {
@@ -63,13 +68,17 @@ function update() {
     });
 
     client.updatePresence({
-      state: config.showState ? !res ? undefined : state : undefined,
-      details: config.showDetails ? !workspace ? 'Idling' : details : undefined,
-      startTimestamp: !res ? undefined : startTime,
-      largeImageKey: 'xcode',
-      largeImageText: 'Editing in Xcode',
-      smallImageKey: fileExtension ? fileExtension === '.swift' ? 'swift' : fileExtension === '.plist' ? 'plist' : 'unknown' : undefined,
-      smallImageText: fileExtension ? `Editing a ${fileExtension} file` : undefined,
+      details: data.song ? data.song : undefined,
+      state: data.artist ? `by ${data.artist}` : undefined,
+      largeImageKey: 'applemusic',
+      largeImageText: 'Listening to Apple Music',
+      smallImageKey: data.state != "playing" ?  "play" : "pause",
+      smallImageText: data.state != "playing" ?  "Playing" : "Paused",
+      startTimestamp: data.state == "playing" ? setTime(parseInt(data.pos)) : undefined,
+      buttons: [
+        {label:"Search on Apple Music", url:`https://music.apple.com/us/search?term=${encodeURIComponent(data.song)}`},
+        {label:"Search on Spotify",url:`https://open.spotify.com/search/${encodeURIComponent(data.song)}`}
+      ],
       instance: true,
     });
   });
