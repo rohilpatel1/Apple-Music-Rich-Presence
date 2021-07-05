@@ -23,9 +23,9 @@ function createWindow() {
 
 app.whenReady().then(createWindow);
 
-function update() {
-  currentSong = iTunesApp.getCurrentSong();
-  if (currentSong) state = iTunesApp.getState()
+async function update() {
+  currentSong = await iTunesApp.getCurrentSong();
+  if (currentSong) state = await iTunesApp.getState()
 
   if (currentSong.name && currentSong.name.includes(" - ")) {
     const split = currentSong.name.split(/\s*\-\s*/);

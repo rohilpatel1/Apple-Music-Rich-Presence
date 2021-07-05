@@ -12,6 +12,26 @@ const LIBPATH = (
   version == "darwin" ? (DEVMODE ? Path.resolve("./bridge/main.applescript") : Path.join(process.resourcesPath, "./app/bridge/main.applescript")) : (DEVMODE ? Path.resolve("./bridge/WSBridge.js") : Path.join(process.resourcesPath, "./app/bridge/WSBridge.js"))
 )
 
+function ASexecString(str) {
+  return new Promise((resolve, reject) => {
+    applescript.execString(str, (err, data) => {
+      if (err) return reject(err);
+
+      resolve(data);
+    })
+  });
+}
+
+function childprocessExec(str, options = { encoding: "utf8" }) {
+  return new Promise((resolve, reject) => {
+    exec(str, options, (err, stdout, stderr) => {
+      if (err) return reject(err);
+
+      resolve(stdout);
+    });
+  });
+}
+
 class iTunes {
   constructor() {
     this.data = {};
@@ -33,7 +53,7 @@ class iTunes {
   elapsed: iTunesApp.PlayerPosition,
   state: getPlayerState()*/
 
-  setup() {
+  async setup() {
     if (version == "darwin") {
       this.readData = fs.readFileSync(LIBPATH, "utf8");
       this.lines = this.readData.split(/\r?\n/);
@@ -41,40 +61,24 @@ class iTunes {
 
     try {
       if (version == "win32") {
-        this.currentSong = JSON.parse(execSync(`cscript //Nologo "${LIBPATH}" currentTrack`, { encoding: "utf8" }));
+        this.currentSong = JSON.parse(await childprocessExec(`cscript //Nologo "${LIBPATH}" currentTrack`, { encoding: "utf8" }));
       } else if (version == "darwin") {
 
-        applescript.execString(this.lines[0], (err, res) => {
-          if (!res) return this.data.state = "Not Opened";
-          
-          applescript.execString(this.lines[1], (err, song) => {
-            this.currentSong.name = song;
-          });
+        const res = await ASexecString(this.lines[0])
+
+        if (!res) return this.currentSong.state = "Not Opened";
         
-          applescript.execString(this.lines[2], (err, album) => {
-            this.currentSong.album = album;
-          });
-        
-          applescript.execString(this.lines[3], (err, artist) => {
-            this.currentSong.artist = artist;
-          });
-        
-          applescript.execString(this.lines[4], (err, duration) => {
-            this.currentSong.duration = duration;
-          });
-        
-          applescript.execString(this.lines[5], (err, elapsed) => {
-            this.currentSong.elapsed = elapsed;
-          });
-        
-          applescript.execString(this.lines[6], (err, state) => {
-            let firstLetter = state[0].toUpperCase();
-            state = firstLetter + state.substring(1);
-            this.currentSong.state = state;
-            this.data.state = state;
-          });
-        });
-        
+        this.currentSong.name = await ASexecString(this.lines[1]);
+        this.currentSong.album = await ASexecString(this.lines[2]);
+        this.currentSong.artist = await ASexecString(this.lines[3]);
+        this.currentSong.duration = await ASexecString(this.lines[4]);
+        this.currentSong.elapsed = await ASexecString(this.lines[5]);
+
+        let state = await ASexecString(this.lines[6]);
+        let firstLetter = state[0].toUpperCase();
+        state = firstLetter + state.substring(1);
+        this.currentSong.state = state;
+        this.data.state = state;
       }
     } catch (e) {
       this.currentSong = {
@@ -83,63 +87,47 @@ class iTunes {
     }
   }
 
-  exec(option, cb) {
+  async exec(option) {
     if (version == "win32") {
-      return execSync(`cscript //Nologo "${LIBPATH}" "${option}"`, { encoding: "utf8" });
+      return await childprocessExec(`cscript //Nologo "${LIBPATH}" "${option}"`, { encoding: "utf8" });
     } else if (version == "darwin") {
-      applescript.execString(option, cb);
+      return await ASexecString(option);
     }
   }
 
-  getCurrentSong() {
+  async getCurrentSong() {
     if (version == "win32")
-      this.currentSong = JSON.parse(execSync(`cscript //Nologo "${LIBPATH}" currentTrack`, { encoding: "utf8" }));
+      this.currentSong = JSON.parse(await childprocessExec(`cscript //Nologo "${LIBPATH}" currentTrack`, { encoding: "utf8" }));
     else if (version == "darwin") {
       if (this.data.state === "Not Opened") return {};
 
-      applescript.execString(this.lines[1], (err, song) => {
-        this.currentSong.name = song;
-      });
-    
-      applescript.execString(this.lines[2], (err, album) => {
-        this.currentSong.album = album;
-      });
-    
-      applescript.execString(this.lines[3], (err, artist) => {
-        this.currentSong.artist = artist;
-      });
-    
-      applescript.execString(this.lines[4], (err, duration) => {
-        this.currentSong.duration = duration;
-      });
-    
-      applescript.execString(this.lines[5], (err, elapsed) => {
-        this.currentSong.elapsed = elapsed;
-      });
-    
-      applescript.execString(this.lines[6], (err, state) => {
-        let firstLetter = state[0].toUpperCase();
-        state = firstLetter + state.substring(1);
-        this.currentSong.state = state;
-        this.data.state = state;
-      });
+      this.currentSong.name = await ASexecString(this.lines[1]);
+      this.currentSong.album = await ASexecString(this.lines[2]);
+      this.currentSong.artist = await ASexecString(this.lines[3]);
+      this.currentSong.duration = await ASexecString(this.lines[4]);
+      this.currentSong.elapsed = await ASexecString(this.lines[5]);
+
+      let state = await ASexecString(this.lines[6]);
+      let firstLetter = state[0].toUpperCase();
+      state = firstLetter + state.substring(1);
+      this.currentSong.state = state;
+      this.data.state = state;
     }
     
     return this.currentSong;
   }
 
-  getState() {
+  async getState() {
     if (version == "darwin") {
-      applescript.execString(this.lines[6], (err, state) => {
-        let firstLetter = state[0].toUpperCase();
-        state = firstLetter + state.substring(1);
-        this.currentSong.state = state.trim();
-        this.data.state = state.trim();
-      });
+      let state = await ASexecString(this.lines[6]);
+      let firstLetter = state[0].toUpperCase();
+      state = firstLetter + state.substring(1);
+      this.currentSong.state = state;
+      this.data.state = state;
 
       return this.data.state;
     } else if (version == "win32") {
-      this.data.state = this.exec("playerState").trim();
+      this.data.state = (await this.exec("playerState")).trim();
       this.currentSong.state = this.data.state;
       return this.data.state;
     }
