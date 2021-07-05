@@ -37,22 +37,51 @@ let data = {
   state: ""
 }
 
-function update() {
+let lastData = {
+  song: "",
+  album: "",
+  artist: ""
+}
 
+function update() {
   applescript.execString(linesArr[0], (err, res) => {
 
     if (!res) return;
 
     applescript.execString(linesArr[1], (err, song) => {
       data.song = song;
+
+      if (data.song != undefined && data.song != lastData.song) {
+        lastData.song = data.song;
+      }
+
+      if (!data.song) {
+        data.song = lastData.song;
+      }
     });
 
     applescript.execString(linesArr[2], (err, album) => {
       data.album = album;
+
+      if (data.album != undefined && data.album != lastData.album) {
+        lastData.album = data.album;
+      }
+
+      if (!data.album) {
+        data.album = lastData.album;
+      }
     });
 
     applescript.execString(linesArr[3], (err, artist) => {
       data.artist = artist;
+
+      if (data.artist != undefined && data.artist != lastData.artist) {
+        lastData.artist = data.artist;
+      }
+
+      if (!data.artist) {
+        data.artist = lastData.artist;
+      }
     });
 
     applescript.execString(linesArr[4], (err, finish) => {
