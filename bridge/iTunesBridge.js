@@ -35,7 +35,7 @@ class iTunes {
 
   setup() {
     if (version == "darwin") {
-      this.readData = fs.readFileSync(LIBPATH);
+      this.readData = fs.readFileSync(LIBPATH, "utf8");
       this.lines = this.readData.split(/\r?\n/);
     }
 
@@ -68,6 +68,8 @@ class iTunes {
           });
         
           applescript.execString(this.lines[6], (err, state) => {
+            let firstLetter = state[0].toUpperCase();
+            state = firstLetter + state.substring(1);
             this.currentSong.state = state;
             this.data.state = state;
           });
@@ -116,6 +118,8 @@ class iTunes {
       });
     
       applescript.execString(this.lines[6], (err, state) => {
+        let firstLetter = state[0].toUpperCase();
+        state = firstLetter + state.substring(1);
         this.currentSong.state = state;
         this.data.state = state;
       });
@@ -125,9 +129,20 @@ class iTunes {
   }
 
   getState() {
-    this.data.state = this.exec("playerState").trim();
-    this.currentSong.state = this.data.state;
-    return this.data.state;
+    if (version == "darwin") {
+      applescript.execString(this.lines[6], (err, state) => {
+        let firstLetter = state[0].toUpperCase();
+        state = firstLetter + state.substring(1);
+        this.currentSong.state = state.trim();
+        this.data.state = state.trim();
+      });
+
+      return this.data.state;
+    } else if (version == "win32") {
+      this.data.state = this.exec("playerState").trim();
+      this.currentSong.state = this.data.state;
+      return this.data.state;
+    }
   }
 }
 
