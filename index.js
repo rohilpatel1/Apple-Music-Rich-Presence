@@ -1,15 +1,17 @@
-const applescript = require('applescript');
-const Path = require('path');
-const fs = require('fs');
 const client = require('discord-rich-presence')('861702238472241162');
 const { app, BrowserWindow } = require('electron');
+require("dotenv").config();
 
-let readData = fs.readFileSync(Path.join(__dirname, '.', 'main.applescript'), 'utf8');
+const iTunes = require("./bridge/iTunesBridge.js");
+const iTunesApp = new iTunes();
 
-console.log(Path.join(__dirname, 'main.applescript'));
-let linesArr = readData.split(/\r?\n/);
+let RPCInterval = 0;
+let state = "Not Opened";
+let currentSong = {};
+let startDate = new Date();
+let lastSong = "";
 
-function createWindow () {
+function createWindow() {
   const win = new BrowserWindow({
     width: 0,
     height: 0,
@@ -28,89 +30,43 @@ function setTime(sec) {
 
 app.whenReady().then(createWindow);
 
-let data = {
-  song: "",
-  album: "",
-  artist: "",
-  finish: "",
-  pos: "",
-  state: ""
-}
+async function update() {
+  currentSong = await iTunesApp.getCurrentSong();
+  if (currentSong) state = await iTunesApp.getState()
 
-let lastData = {
-  song: "",
-  album: "",
-  artist: ""
-}
+  if (currentSong.name && currentSong.name.includes(" - ")) {
+    const split = currentSong.name.split(/\s*\-\s*/);
+    const artist = split.length > 1 ? split[0] : null
+    const songname = split.length > 1 ? split[1] : currentSong.name;
+    currentSong.artist = artist;
+    currentSong.name = songname;
+  }
 
-function update() {
-  applescript.execString(linesArr[0], (err, res) => {
+  let fullTitle = currentSong ? `${currentSong.artist || "Unknown Artist"} - ${currentSong.name}` : "No Song";
 
-    if (!res) return;
+  if (state == "Playing" && (fullTitle !== lastSong || !lastSong)) {
+    startDate = new Date();
+    lastSong = `${currentSong.artist || "Unknown Artist"} - ${currentSong.name}`;
+    startDate.setSeconds(new Date().getSeconds() - parseInt(currentSong.elapsed) - 1);
+  }
 
-    applescript.execString(linesArr[1], (err, song) => {
-      data.song = song;
+  startDate = new Date();
+  startDate.setSeconds(new Date().getSeconds() - parseInt(currentSong.elapsed));
 
-      if (data.song != undefined && data.song != lastData.song) {
-        lastData.song = data.song;
-      }
-
-      if (!data.song) {
-        data.song = lastData.song;
-      }
-    });
-
-    applescript.execString(linesArr[2], (err, album) => {
-      data.album = album;
-
-      if (data.album != undefined && data.album != lastData.album) {
-        lastData.album = data.album;
-      }
-
-      if (!data.album) {
-        data.album = lastData.album;
-      }
-    });
-
-    applescript.execString(linesArr[3], (err, artist) => {
-      data.artist = artist;
-
-      if (data.artist != undefined && data.artist != lastData.artist) {
-        lastData.artist = data.artist;
-      }
-
-      if (!data.artist) {
-        data.artist = lastData.artist;
-      }
-    });
-
-    applescript.execString(linesArr[4], (err, finish) => {
-      data.finish = finish;
-    });
-
-    applescript.execString(linesArr[5], (err, pos) => {
-      data.pos = pos;
-    });
-
-    applescript.execString(linesArr[6], (err, state) => {
-      data.state = state;
-    });
-
-    client.updatePresence({
-      details: data.song ? data.song : undefined,
-      state: data.artist ? `by ${data.artist}` : undefined,
-      largeImageKey: 'applemusic',
-      largeImageText: 'Listening to Apple Music',
-      smallImageKey: data.state != "playing" ?  "play" : "pause",
-      smallImageText: data.state != "playing" ?  "Playing" : "Paused",
-      startTimestamp: data.state == "playing" ? setTime(parseInt(data.pos)) : undefined,
-      buttons: [
-        {label:"Search on Apple Music", url:`https://music.apple.com/us/search?term=${encodeURIComponent(data.song)}`},
-        {label:"Search on Spotify",url:`https://open.spotify.com/search/${encodeURIComponent(data.song)}`}
-      ],
-      instance: true,
-    });
+  client.updatePresence({
+    state: (state == "Playing") ? `by ${currentSong.artist || "Unknown"}` : state,
+    details: currentSong.name || "None",
+    startTimestamp: (state == "Playing") ? startDate.getTime() : Date.now(),
+    largeImageKey: 'applemusic',
+    smallImageKey: (state == "Playing") ? "pause" : "play",
+    smallImageText: state,
+    largeImageText: (state == "Playing") ? `${fullTitle}` : "Idling",
+    buttons: [
+      { label: "Search on Apple Music", url: `https://music.apple.com/us/search?term=${encodeURIComponent(currentSong.artist ? fullTitle : currentSong.name)}`},
+      { label: "Search on Spotify", url: `https://open.spotify.com/search/${encodeURIComponent(currentSong.artist ? fullTitle : currentSong.name)}`}
+    ],
+    instance: true,
   });
 }
 
-setInterval(update, 1000);
+RPCInterval = setInterval(update, 1000);

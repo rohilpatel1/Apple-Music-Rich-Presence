@@ -6,13 +6,17 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "electron .",
-    "build": "electron-packager . XcodeRPC --asar"
+    "pack:osx": "electron-packager . AppleMusicRPC --out=../amRPC --platform=darwin --arch=x64 --overwrite",
+    "pack:win32": "electron-packager . AppleMusicRPC --out=../amRPC --platform=win32 --arch=ia32 --icon=icons/icon.ico --overwrite",
+    "pack:win64": "electron-packager . AppleMusicRPC --out=../amRPC --platform=win32 --arch=x64 app-version=1.1 --icon=icons/icon.ico --overwrite",
+    "build": "npm run pack:win64 && npm run pack:win32 && npm run pack:osx"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "applescript": "^1.0.0",
     "discord-rich-presence": "0.0.8",
+    "dotenv": "^10.0.0",
     "electron": "^13.1.5",
     "fs": "0.0.1-security",
     "path": "^0.12.7"
