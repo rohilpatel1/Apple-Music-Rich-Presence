@@ -12,7 +12,7 @@ const LIBPATH = (
   version == "darwin"
     ? (
       DEVMODE 
-        ? Path.resolve("./app/bridge/OSABridge.js")
+        ? Path.resolve("./bridge/OSABridge.js")
         : Path.join(process.resourcesPath, "./app/bridge/OSABridge.js")
     )
     : (
