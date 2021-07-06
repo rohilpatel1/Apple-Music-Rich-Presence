@@ -14,6 +14,7 @@
   "dependencies": {
     "applescript": "^1.0.0",
     "discord-rich-presence": "0.0.8",
+    "dotenv": "^10.0.0",
     "electron": "^13.1.5",
     "fs": "0.0.1-security",
     "path": "^0.12.7"

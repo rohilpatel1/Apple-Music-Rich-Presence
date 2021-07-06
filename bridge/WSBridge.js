@@ -49,10 +49,14 @@ function getCurrentTrack() {
 
 switch (WScript.Arguments.Item(0)) {
   case "currentTrack":
+  case "currenttrack":
+  case "current":
     WScript.Echo(getCurrentTrack());
     break;
   
   case "playerState":
+  case "playerstate":
+  case "state":
     WScript.Echo(getPlayerState());
     break;
 

@@ -1,5 +1,6 @@
 const client = require('discord-rich-presence')('861702238472241162');
 const { app, BrowserWindow } = require('electron');
+require("dotenv").config();
 
 const iTunes = require("./bridge/iTunesBridge.js");
 const iTunesApp = new iTunes();
