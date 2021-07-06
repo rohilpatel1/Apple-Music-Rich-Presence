@@ -22,6 +22,12 @@ function createWindow() {
   win.loadFile('index.html');
 }
 
+function setTime(sec) {
+  var t = new Date();
+  t.setSeconds(t.getSeconds() - sec);
+  return t.getTime()
+}
+
 app.whenReady().then(createWindow);
 
 async function update() {
@@ -62,6 +68,5 @@ async function update() {
     instance: true,
   });
 }
-
 
 RPCInterval = setInterval(update, 1000);
