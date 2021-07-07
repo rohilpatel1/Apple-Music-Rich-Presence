@@ -6,11 +6,18 @@ var JSON;JSON||(JSON={});
     {"":a})};if(typeof JSON.parse!=="function")JSON.parse=function(a,e){function c(a,d){var g,f,b=a[d];if(b&&typeof b==="object")for(g in b)Object.prototype.hasOwnProperty.call(b,g)&&(f=c(b,g),f!==void 0?b[g]=f:delete b[g]);return e.call(a,d,b)}var d,a=String(a);q.lastIndex=0;q.test(a)&&(a=a.replace(q,function(a){return"\\u"+("0000"+a.charCodeAt(0).toString(16)).slice(-4)}));if(/^[\],:{}\s]*$/.test(a.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g,"@").replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g,
         "]").replace(/(?:^|:|,)(?:\s*\[)+/g,"")))return d=eval("("+a+")"),typeof e==="function"?c({"":d},""):d;throw new SyntaxError("JSON.parse");}})();
 
+var iTunesApp = WScript.GetObject("", "iTunes.Application");
 
-var iTunesApp = WScript.createObject("iTunes.Application");
+function openApp() {
+  if (!iTunesApp)
+    iTunesApp = WScript.CreateObject("iTunes.Application");
+}
 
 function getPlayerState() {
-  if (!iTunesApp) return "Not Opened";
+  if (!iTunesApp || typeof iTunesApp.PlayerState !== "number") {
+    return "Not Opened";
+  }
+  
   switch (iTunesApp.PlayerState) {
     case 0:
       if (iTunesApp.currentTrack && iTunesApp.currentTrack.name)
@@ -20,6 +27,9 @@ function getPlayerState() {
     
     case 1:
       return "Playing";
+
+    default:
+      return "Stopped"
   }
 }
 
@@ -44,7 +54,7 @@ function getCurrentTrack() {
     };
   }
 
-  return JSON.stringify(data);
+  return JSON.stringify(data) || '{"state":"Not Opened"}';
 }
 
 switch (WScript.Arguments.Item(0)) {
@@ -58,6 +68,14 @@ switch (WScript.Arguments.Item(0)) {
   case "playerstate":
   case "state":
     WScript.Echo(getPlayerState());
+    break;
+
+  case "open":
+    if (!iTunesApp) openApp();
+    break;
+
+  case "close":
+    iTunesApp.quit();
     break;
 
   case "play":
