@@ -1,5 +1,5 @@
 const client = require('discord-rich-presence')('861702238472241162');
-const { app, Tray, Menu } = require('electron');
+const { app, BrowserWindow } = require('electron');
 require("dotenv").config();
 
 const iTunes = require("./bridge/iTunesBridge.js");
@@ -9,59 +9,30 @@ let RPCInterval = 0;
 let state = "Not Opened";
 let currentSong = {};
 let startDate = new Date();
-let pauseDate = new Date();
 let lastSong = "";
 
-let tray = null;
-let contextMenu = null;
-let countdown = true;
-
-
-// function createWindow() {
-//   const win = new BrowserWindow({
-//     width: 0,
-//     height: 0,
-//     webPreferences: {
-//       nodeIntegration: true
-//     }
-//   });
-//   win.loadFile('index.html');
-// }
-
-function closeRPC() {
-  iTunesApp.close();
-  client.disconnect();
-  app.quit();
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 0,
+    height: 0,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  });
+  win.loadFile('index.html');
 }
 
-/**
- * 
- * @param {Electron.MenuItem} e 
- */
-function changeTimer(e) {
-  if (!e.checked) {
-    countdown = false;
-  } else {
-    countdown = true;
-  }
+function setTime(sec) {
+  var t = new Date();
+  t.setSeconds(t.getSeconds() - sec);
+  return t.getTime()
 }
 
-function createTray() {
-  tray = new Tray('icons/applemusic.png');
-  contextMenu = Menu.buildFromTemplate([
-    { label: "Timer Countdown?", type: "checkbox", click: changeTimer, checked: true },
-    { label: "Quit RPC and iTunes", type: "normal", click: closeRPC },
-  ]);
-
-  tray.setToolTip("AppleMusic RPC");
-  tray.setContextMenu(contextMenu);
-}
-
-app.whenReady().then(createTray);
+app.whenReady().then(createWindow);
 
 async function update() {
-  state = await iTunesApp.getState()
   currentSong = await iTunesApp.getCurrentSong();
+  if (currentSong) state = await iTunesApp.getState()
 
   if (currentSong.name && currentSong.name.includes(" - ")) {
     const split = currentSong.name.split(/\s*\-\s*/);
@@ -79,21 +50,13 @@ async function update() {
     startDate.setSeconds(new Date().getSeconds() - parseInt(currentSong.elapsed) - 1);
   }
 
-  if (state === "Playing") {
-    pauseDate = new Date();
-  }
-
   startDate = new Date();
-  startDate.setSeconds(startDate.getSeconds() - (currentSong.duration + parseInt(currentSong.elapsed)) + currentSong.duration);
-
-  let endDate = new Date();
-  endDate.setSeconds(endDate.getSeconds() + (currentSong.duration - currentSong.elapsed));
+  startDate.setSeconds(new Date().getSeconds() - parseInt(currentSong.elapsed));
 
   client.updatePresence({
-    state: (state == "Playing") ? `by ${currentSong.artist || "Unknown"}` : state,
-    details: currentSong.name || "None",
-    startTimestamp: (state == "Playing") ? startDate.getTime() : pauseDate.getTime(),
-    endTimestamp: (state === "Playing" && countdown) ? endDate.getTime() : undefined,
+    state: (state == "Playing") ? `on ${currentSong.album || "Unknown"}` : state,
+    details: `${currentSong.artist || "Unknown"} - ${currentSong.name || "Unknown"}`,
+    startTimestamp: (state == "Playing") ? startDate.getTime() : Date.now(),
     largeImageKey: 'applemusic',
     smallImageKey: (state == "Playing") ? "pause" : "play",
     smallImageText: state,
@@ -106,4 +69,4 @@ async function update() {
   });
 }
 
-RPCInterval = setInterval(update, 300);
+RPCInterval = setInterval(update, 1000);
