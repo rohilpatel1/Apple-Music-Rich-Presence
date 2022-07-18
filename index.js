@@ -54,8 +54,8 @@ async function update() {
   startDate.setSeconds(new Date().getSeconds() - parseInt(currentSong.elapsed));
 
   client.updatePresence({
-    state: (state == "Playing") ? `by ${currentSong.artist || "Unknown"}` : state,
-    details: currentSong.name || "None",
+    state: (state == "Playing") ? `on ${currentSong.album || "Unknown"}` : state,
+    details: `${currentSong.artist || "Unknown"} - ${currentSong.name || "Unknown"}`,
     startTimestamp: (state == "Playing") ? startDate.getTime() : Date.now(),
     largeImageKey: 'applemusic',
     smallImageKey: (state == "Playing") ? "pause" : "play",
