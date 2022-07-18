@@ -54,3 +54,17 @@ This Discord Rich Presence is a bridge between the known social media [Discord](
 
   7. Drag the app into the "Applications" tab in Finder. 
   8. Locate the app once it is in the "Applications" tab. Right click on the app and click "Open" to view the app. Enjoy!
+
+* ### Windows 7 / 10 / 11
+  1. Go to [releases](https://github.com/rohilpatel1/Apple-Music-Rich-Presence/releases) and choose a version of your choice. It it highly encouraged that you choose the most recent version. 
+
+  2. At the bottom of the release, where is says "Assets," choose the file that corresponds with your operating system (eg.  `win-x64.zip` corresponds with **windows**).
+    - Note for the files there are two folders use the one that says `win32`
+
+  3. Download the file by clicking on it, and open the file in your **Downloads** folder, or the respective location of where your downloads go to.
+
+  4. If needed, unzip the file so see the contents.
+
+  5. Open the folder (the one that says `win32`) and find "AppleMusicRPC.exe"
+
+  6. Run the file and you are go to go! Running this file should automatically open up iTunes and hook into it. Enjoy!
