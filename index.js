@@ -58,7 +58,7 @@ async function update() {
     details: `${currentSong.artist || "Unknown"} - ${currentSong.name || "Unknown"}`,
     startTimestamp: (state == "Playing") ? startDate.getTime() : Date.now(),
     largeImageKey: 'applemusic',
-    smallImageKey: (state == "Playing") ? "pause" : "play",
+    smallImageKey: (state == "Playing") ? "play" : "pause",
     smallImageText: state,
     largeImageText: (state == "Playing") ? `${fullTitle}` : "Idling",
     buttons: [
